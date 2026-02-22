@@ -5,7 +5,7 @@ import sqlite3
 app = Flask(__name__)
 app.secret_key = "greefo_secret"
 
-# -------- INIT DATABASE --------
+# ---------- INIT DATABASE ----------
 def init_db():
     conn = sqlite3.connect("database.db")
     cur = conn.cursor()
@@ -44,12 +44,12 @@ def init_db():
 
 init_db()
 
-# -------- HOME --------
+# ---------- HOME ----------
 @app.route("/")
 def home():
     return redirect(url_for("login"))
 
-# -------- SIGNUP --------
+# ---------- SIGNUP ----------
 @app.route("/signup", methods=["GET", "POST"])
 def signup():
     if request.method == "POST":
@@ -71,7 +71,7 @@ def signup():
 
     return render_template("signup.html")
 
-# -------- LOGIN --------
+# ---------- LOGIN ----------
 @app.route("/login", methods=["GET", "POST"])
 def login():
     if request.method == "POST":
@@ -79,14 +79,14 @@ def login():
         return redirect(url_for("mood"))
     return render_template("login.html")
 
-# -------- MOOD PAGE --------
+# ---------- MOOD ----------
 @app.route("/mood")
 def mood():
     if "user" not in session:
         return redirect(url_for("login"))
     return render_template("mood.html")
 
-# -------- WALL FUNCTION --------
+# ---------- WALL FUNCTION ----------
 def handle_wall(mood_name, template_name):
     if "user" not in session:
         return redirect(url_for("login"))
@@ -111,17 +111,14 @@ def handle_wall(mood_name, template_name):
     cur.execute("SELECT * FROM replies ORDER BY id ASC")
     replies = cur.fetchall()
 
-    try:
-        cur.execute("SELECT username, profile_pic FROM users")
-        user_pics = dict(cur.fetchall())
-    except:
-        user_pics = {}
+    cur.execute("SELECT username, profile_pic FROM users")
+    user_pics = dict(cur.fetchall())
 
     conn.close()
 
     return render_template(template_name, messages=posts, replies=replies, user_pics=user_pics)
 
-# -------- ROUTES --------
+# ---------- ROUTES ----------
 @app.route("/happy", methods=["GET", "POST"])
 def happy():
     return handle_wall("happy", "happy.html")
@@ -138,7 +135,7 @@ def talk():
 def chill():
     return handle_wall("chill", "chill.html")
 
-# -------- DELETE --------
+# ---------- DELETE ----------
 @app.route("/delete/<int:id>", methods=["POST"])
 def delete(id):
     conn = sqlite3.connect("database.db")
@@ -148,35 +145,27 @@ def delete(id):
     conn.close()
     return redirect(request.referrer)
 
-# -------- REPLY --------
 @app.route("/reply/<int:post_id>", methods=["POST"])
 def reply(post_id):
-    if "user" not in session:
-        return redirect(url_for("login"))
-
     reply_text = request.form["reply"]
     username = session["user"]
     time = datetime.now().strftime("%Y-%m-%d %H:%M")
 
     conn = sqlite3.connect("database.db")
     cur = conn.cursor()
-
     cur.execute(
         "INSERT INTO replies (post_id, username, reply, time) VALUES (?, ?, ?, ?)",
         (post_id, username, reply_text, time)
     )
-
     conn.commit()
     conn.close()
 
     return redirect(request.referrer)
 
-# -------- LOGOUT --------
 @app.route("/logout")
 def logout():
     session.pop("user", None)
     return redirect(url_for("login"))
 
-# -------- RUN --------
 if __name__ == "__main__":
     app.run(debug=True)

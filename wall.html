@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Greefo Wall</title>
+
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            text-align: center;
+            background-color: #b4e7fd;
+            margin: 0;
+            padding: 40px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }
+
+        textarea {
+            width: 100%;
+            max-width: 500px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            resize: vertical;
+            font-size: 14px;
+        }
+
+        button {
+            cursor: pointer;
+            padding: 8px 16px;
+            border-radius: 6px;
+            border: 1px solid #ddd;
+            background: #fff;
+            transition: 0.2s;
+            font-size: 13px;
+        }
+
+        button:hover {
+            background: #f0f0f0;
+        }
+
+        .message-box {
+            text-align: left;
+            border: 1px solid #eee;
+            padding: 15px;
+            margin: 18px 0;
+            border-radius: 10px;
+            background: #fff;
+        }
+
+        .reply-item {
+            margin-left: 20px;
+            background: #f3f3f3;
+            padding: 8px 10px;
+            border-radius: 6px;
+            margin-top: 6px;
+            font-size: 13px;
+        }
+
+        hr {
+            border: 0;
+            border-top: 1px solid #eee;
+            margin: 22px 0;
+        }
+
+        .logout {
+            display: inline-block;
+            margin-top: 15px;
+            text-decoration: none;
+            color: #666;
+            font-size: 14px;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <h1>Greefo</h1>
+    <p>Share your feelings freely</p>
+
+    <hr>
+
+    <!-- Write Section -->
+    <h2>Write something 💬</h2>
+
+    <form method="POST">
+        <textarea name="message" rows="3" required
+            placeholder="Write something..."
+            onkeydown="if(event.key==='Enter' && !event.shiftKey){ this.form.submit(); return false; }"></textarea>
+        <br><br>
+        <button type="submit">Post</button>
+    </form>
+
+    <hr>
+
+    <!-- Community Wall -->
+    <h3>Community Wall</h3>
+
+    {% for msg in messages %}
+    <div class="message-box">
+
+        <div>
+            <b>{{ msg[1] }}</b>
+            <small style="float:right; color:gray;">{{ msg[3] }}</small>
+        </div>
+
+        <p>{{ msg[2] }}</p>
+
+        <!-- Delete (only owner) -->
+        {% if msg[1] == session['user'] %}
+        <form action="{{ url_for('delete', id=msg[0]) }}" method="post" style="display:inline;">
+            <button type="submit">Delete</button>
+        </form>
+        {% endif %}
+
+        <!-- Reply Button -->
+        <button onclick="toggleReply('{{ msg[0] }}')">Reply</button>
+
+        <!-- Reply Box -->
+        <div id="reply-box-{{ msg[0] }}" style="display:none; margin-top:10px;">
+            <form action="/reply/{{ msg[0] }}" method="post">
+                <input type="text" name="reply" placeholder="Write a reply..." required
+                       style="padding:6px; border-radius:6px; border:1px solid #ccc; width:70%;">
+                <button type="submit">Send</button>
+            </form>
+        </div>
+
+        <!-- Replies -->
+        {% for r in replies %}
+            {% if r[1] == msg[0] %}
+            <div class="reply-item">
+                <b>{{ r[2] }}</b>: {{ r[3] }}
+            </div>
+            {% endif %}
+        {% endfor %}
+
+    </div>
+    {% endfor %}
+
+    <a href="/logout" class="logout">Logout</a>
+
+</div>
+
+<script>
+    function toggleReply(id) {
+        const box = document.getElementById("reply-box-" + id);
+        if (!box) return;
+
+        if (box.style.display === "none" || box.style.display === "") {
+            box.style.display = "block";
+        } else {
+            box.style.display = "none";
+        }
+    }
+</script>
+
+</body>
+</html>
