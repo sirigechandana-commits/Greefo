@@ -1,6 +1,6 @@
 import sqlite3
 
-conn = sqlite3.connect("greefo.db")
+conn = sqlite3.connect("database.db")
 cursor = conn.cursor()
 
 # USERS TABLE
@@ -8,16 +8,30 @@ cursor.execute("""
 CREATE TABLE IF NOT EXISTS users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     username TEXT UNIQUE,
-    password TEXT
+    password TEXT,
+    profile_pic TEXT
 )
 """)
 
-# MESSAGES TABLE (if not already there)
+# POSTS TABLE
 cursor.execute("""
-CREATE TABLE IF NOT EXISTS messages (
+CREATE TABLE IF NOT EXISTS posts (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    text TEXT,
-    created_at TEXT
+    user TEXT,
+    message TEXT,
+    time TEXT,
+    mood TEXT
+)
+""")
+
+# REPLIES TABLE
+cursor.execute("""
+CREATE TABLE IF NOT EXISTS replies (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    post_id INTEGER,
+    username TEXT,
+    reply TEXT,
+    time TEXT
 )
 """)
 
