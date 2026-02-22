@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Mood Page</title>
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(to right, #89f7fe, #66a6ff);
+            text-align: center;
+            padding-top: 60px;
+            color: white;
+        }
+
+        h1 {
+            font-size: 36px;
+            margin-bottom: 40px;
+        }
+
+        .mood-container {
+            display: flex;
+            justify-content: center;
+            gap: 25px;
+            flex-wrap: wrap;
+        }
+
+        .mood-card {
+            background: rgba(255,255,255,0.15);
+            padding: 20px;
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+            width: 160px;
+            transition: 0.3s;
+        }
+
+        .mood-card:hover {
+            transform: scale(1.08);
+        }
+
+        .mood-card img {
+            width: 100%;
+            height: 120px;
+            object-fit: cover;
+            border-radius: 15px;
+        }
+
+        .mood-btn {
+            margin-top: 10px;
+            padding: 10px;
+            width: 100%;
+            border-radius: 10px;
+            border: none;
+            font-size: 16px;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        .happy { background-color: #de9fef; color: black; }
+        .chill { background-color: #fefb71; }
+        .sad { background-color: #6c757d; }
+        .talk { background-color: #28a745; }
+    </style>
+</head>
+
+<body>
+
+<h1>Welcome to Greefo</h1>
+
+<h3>How are you feeling today?</h3>
+
+<div class="mood-container">
+
+    <!-- Happy -->
+    <div class="mood-card">
+        <img src="{{ url_for('static', filename='img/happy.jpg') }}" alt="Happy">
+        <a href="/happy"><button class="mood-btn happy">😊 Happy</button></a>
+    </div>
+
+    <!-- Chill -->
+    <div class="mood-card">
+        <img src="{{ url_for('static', filename='img/chill.jpg') }}" alt="Chill">
+        <a href="/chill"><button class="mood-btn chill">😌 Chill</button></a>
+    </div>
+
+    <!-- Sad -->
+    <div class="mood-card">
+        <img src="{{ url_for('static', filename='img/sad.jpg') }}" alt="Sad">
+        <a href="/sad"><button class="mood-btn sad">😔 Sad</button></a>
+    </div>
+
+    <!-- Talk -->
+    <div class="mood-card">
+        <img src="{{ url_for('static', filename='img/talk.jpg') }}" alt="Talk">
+        <a href="/talk"><button class="mood-btn talk">🗣 Talk</button></a>
+    </div>
+
+</div>
+
+</body>
+</html>
