@@ -118,6 +118,7 @@ def handle_wall(mood_name, template_name):
 
     return render_template(template_name, messages=posts, replies=replies, user_pics=user_pics)
 
+# ---------- ROUTES ----------
 @app.route("/happy", methods=["GET", "POST"])
 def happy():
     return handle_wall("happy", "happy.html")
@@ -134,6 +135,7 @@ def talk():
 def chill():
     return handle_wall("chill", "chill.html")
 
+# ---------- DELETE ----------
 @app.route("/delete/<int:id>", methods=["POST"])
 def delete(id):
     conn = sqlite3.connect("database.db")
