@@ -1,15 +1,17 @@
 from datetime import datetime
 from flask import Flask, render_template, request, redirect, url_for, session
 import sqlite3
-
-app = Flask(__name__)
 import os
 
-# CREATE DATABASE IF NOT EXISTS
+app = Flask(__name__)
+app.secret_key = "greefo_secret"
+
+# -------- CREATE DATABASE --------
 def init_db():
     conn = sqlite3.connect("database.db")
     cur = conn.cursor()
 
+    # USERS TABLE
     cur.execute("""
     CREATE TABLE IF NOT EXISTS users (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -19,6 +21,7 @@ def init_db():
     )
     """)
 
+    # POSTS TABLE
     cur.execute("""
     CREATE TABLE IF NOT EXISTS posts (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -29,6 +32,7 @@ def init_db():
     )
     """)
 
+    # REPLIES TABLE
     cur.execute("""
     CREATE TABLE IF NOT EXISTS replies (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -43,42 +47,6 @@ def init_db():
     conn.close()
 
 init_db()
-app.secret_key = "greefo_secret"
-
-# -------- CREATE DATABASE --------
-conn = sqlite3.connect("database.db")
-cur = conn.cursor()
-
-try:
-    cur.execute("ALTER TABLE users ADD COLUMN profile_pic TEXT")
-    print("✅ profile_pic column added")
-except Exception as e:
-    print("⚠️", e)
-
-# POSTS TABLE
-cur.execute("""
-CREATE TABLE IF NOT EXISTS posts (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    user TEXT,
-    message TEXT,
-    time TEXT,
-    mood TEXT
-)
-""")
-
-# REPLIES TABLE  ⭐ ADDED
-cur.execute("""
-CREATE TABLE IF NOT EXISTS replies (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    post_id INTEGER,
-    username TEXT,
-    reply TEXT,
-    time TEXT
-)
-""")
-
-conn.commit()
-conn.close()
 
 # -------- HOME --------
 @app.route("/")
@@ -86,8 +54,6 @@ def home():
     return redirect(url_for("login"))
 
 # -------- SIGNUP --------
-users = {}
-
 @app.route("/signup", methods=["GET", "POST"])
 def signup():
     if request.method == "POST":
@@ -152,16 +118,14 @@ def handle_wall(mood_name, template_name):
     cur.execute("SELECT * FROM replies ORDER BY id ASC")
     replies = cur.fetchall()
 
-    # ⭐ GET USER PROFILE PICS
-    try:
-        cur.execute("SELECT username, profile_pic FROM users")
-        user_pics = dict(cur.fetchall())
-    except:
-        user_pics = {}
+    # GET USER PROFILE PICS
+    cur.execute("SELECT username, profile_pic FROM users")
+    user_pics = dict(cur.fetchall())
 
     conn.close()
 
     return render_template(template_name, messages=posts, replies=replies, user_pics=user_pics)
+
 # -------- HAPPY --------
 @app.route("/happy", methods=["GET", "POST"])
 def happy():
@@ -226,4 +190,3 @@ def logout():
 # -------- RUN --------
 if __name__ == "__main__":
     app.run(debug=True)
-
