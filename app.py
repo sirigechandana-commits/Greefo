@@ -3,6 +3,46 @@ from flask import Flask, render_template, request, redirect, url_for, session
 import sqlite3
 
 app = Flask(__name__)
+import os
+
+# CREATE DATABASE IF NOT EXISTS
+def init_db():
+    conn = sqlite3.connect("database.db")
+    cur = conn.cursor()
+
+    cur.execute("""
+    CREATE TABLE IF NOT EXISTS users (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        username TEXT UNIQUE,
+        password TEXT,
+        profile_pic TEXT
+    )
+    """)
+
+    cur.execute("""
+    CREATE TABLE IF NOT EXISTS posts (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user TEXT,
+        message TEXT,
+        time TEXT,
+        mood TEXT
+    )
+    """)
+
+    cur.execute("""
+    CREATE TABLE IF NOT EXISTS replies (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        post_id INTEGER,
+        username TEXT,
+        reply TEXT,
+        time TEXT
+    )
+    """)
+
+    conn.commit()
+    conn.close()
+
+init_db()
 app.secret_key = "greefo_secret"
 
 # -------- CREATE DATABASE --------
@@ -186,3 +226,4 @@ def logout():
 # -------- RUN --------
 if __name__ == "__main__":
     app.run(debug=True)
+
