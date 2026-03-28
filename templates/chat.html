@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Chat</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body>
+
+<h1>Chat with {{ receiver }}</h1>
+
+<hr>
+
+<!-- CHAT MESSAGES -->
+
+{% for msg in messages %}
+
+<div style="
+background:rgb(240,237,240);
+padding:15px;
+border-radius:12px;
+margin-bottom:12px;
+box-shadow:0 2px 6px rgba(0,0,0,0.1);
+">
+
+<div style="display:flex; justify-content:space-between;">
+
+<strong>{{ msg[0] }}</strong>
+
+<span style="color:gray;">🕒 {{ msg[2] }}</span>
+
+</div>
+
+<p style="margin-top:8px;">💬 {{ msg[1] }}</p>
+
+{% if msg[0] == session['user'] %}
+<form action="{{ url_for('delete_chat', id=msg[3]) }}" method="POST">
+<button style="
+background:#a88dc5;
+color:white;
+border:none;
+padding:6px 12px;
+border-radius:6px;
+cursor:pointer;
+margin-top:6px;
+">
+Delete
+</button>
+</form>
+{% endif %}
+
+</div>
+
+{% endfor %}
+
+<hr>
+
+<!-- SEND MESSAGE -->
+
+<form method="POST">
+
+<input type="text" name="message" placeholder="Type message..." required>
+
+<button type="submit">Send</button>
+
+</form>
+
+<br>
+
+<a href="/mood">⬅ Back</a>
+
+</body>
+</html>

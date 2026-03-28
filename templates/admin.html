@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Admin Dashboard</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body>
+
+<h1>Admin Dashboard</h1>
+
+<a href="/logout">Logout</a>
+
+<hr>
+
+<h2>All Messages</h2>
+
+{% for msg in messages %}
+
+<p><b>{{msg[2]}}</b></p>
+<p><strong>{{msg[0]}}</strong>: {{msg[1]}}</p>
+
+<a href="/delete_message/{{msg[3]}}">Delete</a>
+
+<hr>
+
+{% endfor %}
+
+<hr>
+
+<h2>Login Activity</h2>
+
+<table border="1">
+<tr>
+<th>ID</th>
+<th>Username</th>
+<th>Action</th>
+<th>Time</th>
+</tr>
+
+{% for log in activity %}
+
+<tr>
+<td>{{log[0]}}</td>
+<td>{{log[1]}}</td>
+<td>{{log[2]}}</td>
+<td>{{log[3]}}</td>
+</tr>
+
+{% endfor %}
+
+</table>
+
+</body>
+</html>

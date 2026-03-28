@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Sad Wall</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body>
+
+<h1>😔 Feeling sad</h1>
+<h2>Its alright not to be ok 🤗</h2>
+
+<form method="POST">
+<textarea name="message" rows="1" required
+placeholder="Write something..."
+onkeydown="if(event.key==='Enter' && !event.shiftKey){ this.form.submit(); return false; }"></textarea>
+
+<br><br>
+<button type="submit">Post</button>
+</form>
+
+<hr>
+
+{% for msg in messages %}
+
+<div style="
+background:rgb(240,237,240);
+padding:15px;
+border-radius:12px;
+margin-bottom:12px;
+box-shadow:0 2px 6px rgba(0,0,0,0.1);
+">
+
+<div style="display:flex; justify-content:space-between; align-items:center;">
+
+<div class="user-info">
+
+<img src="{{ url_for('static', filename='img/' + user_pics.get(msg[1], 'sadavatar.jpg')) }}" class="avatar">
+
+<strong>{{ msg[1] }}</strong>
+
+<p style="margin-top:8px;">💬 {{ msg[2] }}</p>
+
+<div style="margin-top:10px; display:flex; gap:10px;">
+
+{% if msg[1] != session['user'] %}
+<a href="{{ url_for('chat', username=msg[1]) }}" style="
+background:#a88dc5;
+color:white;
+border:none;
+padding:6px 12px;
+border-radius:6px;
+text-decoration:none;
+font-size:14px;
+">
+💬 Chat
+</a>
+{% endif %}
+
+{% if msg[1] == session['user'] %}
+<form action="{{ url_for('delete_message', id=msg[0]) }}" method="POST">
+<button style="
+background:#a88dc5;
+color:white;
+border:none;
+padding:6px 12px;
+border-radius:6px;
+cursor:pointer;
+font-size:14px;
+">
+🗑 Delete
+</button>
+</form>
+{% endif %}
+
+</div>
+</div>
+
+<span style="color:gray;">🕒 {{ msg[3] }}</span>
+
+</div>
+
+</div>
+
+{% endfor %}
+
+<a href="/mood">⬅ Back</a>
+
+</body>
+</html>
