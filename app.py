@@ -1,6 +1,7 @@
 from datetime import datetime
 from flask import Flask, render_template, request, redirect, url_for, session
 import sqlite3
+import os
 
 app = Flask(__name__)
 app.secret_key = "greefo_secret"
@@ -9,11 +10,22 @@ app.secret_key = "greefo_secret"
 conn = sqlite3.connect("database.db")
 cur = conn.cursor()
 
+# USERS TABLE
+cur.execute("""
+CREATE TABLE IF NOT EXISTS users (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    username TEXT UNIQUE,
+    password TEXT,
+    profile_pic TEXT DEFAULT 'avatar.jpg'
+)
+""")
+
 try:
     cur.execute("ALTER TABLE users ADD COLUMN profile_pic TEXT")
     print("✅ profile_pic column added")
 except Exception as e:
-    print("⚠️", e)
+    # Column already exists or table just created
+    pass
 
 # POSTS TABLE
 cur.execute("""
@@ -78,9 +90,21 @@ def signup():
         conn = sqlite3.connect("database.db")
         cur = conn.cursor()
 
+        if not username or not password:
+            return render_template("signup.html", error="Username and password are required.")
+
+        conn = sqlite3.connect("database.db")
+        cur = conn.cursor()
+
+        # Check if user already exists
+        cur.execute("SELECT id FROM users WHERE username=?", (username,))
+        if cur.fetchone():
+            conn.close()
+            return render_template("signup.html", error="Username already exists. Try another.")
+
         cur.execute(
             "INSERT INTO users (username, password, profile_pic) VALUES (?, ?, ?)",
-            (username, password, "default.png")
+            (username, password, "avatar.jpg")
         )
 
         conn.commit()
@@ -95,42 +119,107 @@ def signup():
 def login():
     if request.method == "POST":
         username = request.form["username"]
-        session["user"] = username
+        password = request.form["password"]
 
-        import sqlite3
         conn = sqlite3.connect("database.db")
         cursor = conn.cursor()
+        cursor.execute("SELECT password FROM users WHERE username=?", (username,))
+        user_data = cursor.fetchone()
 
-        cursor.execute(
-            "INSERT INTO login_activity (username, action) VALUES (?, ?)",
-            (username, "login")
-        )
-
-        conn.commit()
+        if user_data and user_data[0] == password:
+            session["user"] = username
+            cursor.execute(
+                "INSERT INTO login_activity (username, action) VALUES (?, ?)",
+                (username, "login")
+            )
+            conn.commit()
+            conn.close()
+            return redirect(url_for("mood"))
+        
         conn.close()
-
-        return redirect(url_for("mood"))
+        return render_template("login.html", error="Invalid username or password.")
 
     return render_template("login.html")
 
 @app.route("/admin")
 def admin():
-
     if session.get("user") != "admin":
-        return "Access Denied"
+        return redirect(url_for("login"))
 
     conn = sqlite3.connect("database.db")
     cursor = conn.cursor()
 
-    cursor.execute("SELECT * FROM posts")
+    # Get all posts
+    cursor.execute("SELECT id, user, message, time, mood FROM posts ORDER BY id DESC")
     messages = cursor.fetchall()
 
-    cursor.execute("SELECT * FROM login_activity ORDER BY time DESC")
+    # Get login activity
+    cursor.execute("SELECT id, username, action, time FROM login_activity ORDER BY time DESC LIMIT 50")
     activity = cursor.fetchall()
+    
+    # Get all users (except admin)
+    cursor.execute("SELECT id, username, profile_pic FROM users WHERE username != 'admin' ORDER BY id DESC")
+    raw_users = cursor.fetchall()
+    users = [(u[0], u[1], 'avatar.jpg' if not u[2] or u[2] == 'default.png' else u[2]) for u in raw_users]
+
+    # Calculate Stats
+    cursor.execute("SELECT COUNT(*) FROM posts")
+    total_posts = cursor.fetchone()[0]
+
+    cursor.execute("SELECT COUNT(*) FROM users")
+    total_users = cursor.fetchone()[0]
+
+    cursor.execute("SELECT COUNT(*) FROM login_activity WHERE action='login'")
+    total_logins = cursor.fetchone()[0]
+
+    cursor.execute("SELECT COUNT(*) FROM private_messages")
+    total_msgs = cursor.fetchone()[0]
+
+    stats = {
+        "total_posts": total_posts,
+        "total_users": total_users,
+        "total_logins": total_logins,
+        "total_msgs": total_msgs
+    }
 
     conn.close()
 
-    return render_template("admin.html", messages=messages, activity=activity) 
+    return render_template("admin.html", messages=messages, activity=activity, users=users, stats=stats) 
+
+@app.route("/admin/delete_user/<int:user_id>", methods=["POST"])
+def admin_delete_user(user_id):
+    if session.get("user") != "admin":
+        return redirect(url_for("login"))
+    
+    conn = sqlite3.connect("database.db")
+    cur = conn.cursor()
+    
+    # Get username first to delete their posts/replies if desired
+    cur.execute("SELECT username FROM users WHERE id=?", (user_id,))
+    user = cur.fetchone()
+    
+    if user:
+        username = user[0]
+        cur.execute("DELETE FROM users WHERE id=?", (user_id,))
+        cur.execute("DELETE FROM posts WHERE user=?", (username,))
+        cur.execute("DELETE FROM replies WHERE username=?", (username,))
+        cur.execute("DELETE FROM private_messages WHERE sender=? OR receiver=?", (username, username))
+        conn.commit()
+        
+    conn.close()
+    return redirect(url_for("admin"))
+
+@app.route("/admin/clear_posts/<username>", methods=["POST"])
+def admin_clear_posts(username):
+    if session.get("user") != "admin":
+        return redirect(url_for("login"))
+    
+    conn = sqlite3.connect("database.db")
+    cur = conn.cursor()
+    cur.execute("DELETE FROM posts WHERE user=?", (username,))
+    conn.commit()
+    conn.close()
+    return redirect(url_for("admin"))
 
 # -------- MOOD PAGE --------
 @app.route("/mood")
@@ -171,7 +260,8 @@ def handle_wall(mood_name, template_name):
     # ⭐ GET USER PROFILE PICS
     try:
         cur.execute("SELECT username, profile_pic FROM users")
-        user_pics = dict(cur.fetchall())
+        results = cur.fetchall()
+        user_pics = {u: (p if p and p != 'default.png' else 'avatar.jpg') for u, p in results}
     except:
         user_pics = {}
 
@@ -315,4 +405,5 @@ def delete_chat(id):
     
 # -------- RUN --------
 if __name__ == "__main__":
-    app.run(debug=True)
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host='0.0.0.0', port=port, debug=False)
